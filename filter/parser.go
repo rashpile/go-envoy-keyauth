@@ -11,6 +11,7 @@ import (
 	xds "github.com/cncf/xds/go/xds/type/v3"
 	"github.com/envoyproxy/envoy/contrib/golang/common/go/api"
 	"github.com/rashpile/go-envoy-keyauth/auth"
+	"github.com/rashpile/go-envoy-keyauth/store"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -32,33 +33,33 @@ type Config struct {
 	APIKeyCookie      string
 	UsernameHeader    string
 	ExcludePaths      []string
-	KeySource         auth.KeySource
-	ClusterConfigs    map[string]*ClusterConfig
+	KeySource         store.KeySource
+	ClusterConfigs    map[string]*auth.ClusterConfig
 	AuthPriority      []string // Priority order: e.g. ["header", "cookie", "query"]
 	CookieSettings    CookieSettings
 }
 
 // ClusterConfig holds configuration specific to a cluster
-type ClusterConfig struct {
-	Exclude      bool
-	ExcludePaths []string
-}
+// type ClusterConfig struct {
+// 	Exclude      bool
+// 	ExcludePaths []string
+// }
 
 // Parser parses the filter configuration
 type Parser struct {
 }
 
 // FilterFactory creates a new Filter instance
-func FilterFactory(c interface{}, callbacks api.FilterCallbackHandler) api.StreamFilter {
-	conf, ok := c.(*Config)
-	if !ok {
-		panic("unexpected config type")
-	}
-	return &Filter{
-		Callbacks: callbacks,
-		Config:    conf,
-	}
-}
+// func FilterFactory(c interface{}, callbacks api.FilterCallbackHandler) api.StreamFilter {
+// 	conf, ok := c.(*Config)
+// 	if !ok {
+// 		panic("unexpected config type")
+// 	}
+// 	return &Filter{
+// 		Callbacks: callbacks,
+// 		Config:    conf,
+// 	}
+// }
 
 // Parse parses the filter configuration from Envoy
 func (p *Parser) Parse(any *anypb.Any, callbacks api.ConfigCallbackHandler) (interface{}, error) {
@@ -74,7 +75,7 @@ func (p *Parser) Parse(any *anypb.Any, callbacks api.ConfigCallbackHandler) (int
 		APIKeyCookie:     DefaultAPIKeyCookie,
 		UsernameHeader:   DefaultUsernameHeader,
 		ExcludePaths:     []string{},
-		ClusterConfigs:   make(map[string]*ClusterConfig),
+		ClusterConfigs:   make(map[string]*auth.ClusterConfig),
 		AuthPriority:     parseAuthPriority(DefaultAuthPriority),
 		CookieSettings:   DefaultCookieSettings(),
 	}
@@ -119,7 +120,7 @@ func (p *Parser) Parse(any *anypb.Any, callbacks api.ConfigCallbackHandler) (int
 	if clusters, ok := v.AsMap()["clusters"].(map[string]interface{}); ok {
 		for clusterName, clusterConfig := range clusters {
 			if config, ok := clusterConfig.(map[string]interface{}); ok {
-				clusterConf := &ClusterConfig{
+				clusterConf := &auth.ClusterConfig{
 					ExcludePaths: []string{},
 					Exclude:      false,
 				}
@@ -151,7 +152,7 @@ func (p *Parser) Parse(any *anypb.Any, callbacks api.ConfigCallbackHandler) (int
 	}
 
 	// Create the key source
-	keySource, err := auth.NewFileKeySource(keysFile, time.Duration(checkInterval)*time.Second)
+	keySource, err := store.NewFileKeySource(keysFile, time.Duration(checkInterval)*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create key source: %w", err)
 	}
@@ -191,7 +192,7 @@ func (p *Parser) Merge(parent interface{}, child interface{}) interface{} {
 		AuthPriority:     slices.Clone(parentConfig.AuthPriority),
 		KeySource:        parentConfig.KeySource,
 		ExcludePaths:     slices.Clone(parentConfig.ExcludePaths),
-		ClusterConfigs:   make(map[string]*ClusterConfig),
+		ClusterConfigs:   make(map[string]*auth.ClusterConfig),
 	}
 
 	// Override with child values if specified
@@ -228,7 +229,7 @@ func (p *Parser) Merge(parent interface{}, child interface{}) interface{} {
 
 	// Copy parent cluster configs first
 	for clusterName, parentClusterConfig := range parentConfig.ClusterConfigs {
-		newClusterConfig := &ClusterConfig{
+		newClusterConfig := &auth.ClusterConfig{
 			ExcludePaths: slices.Clone(parentClusterConfig.ExcludePaths),
 			Exclude:      parentClusterConfig.Exclude,
 		}
@@ -246,7 +247,7 @@ func (p *Parser) Merge(parent interface{}, child interface{}) interface{} {
 			}
 		} else {
 			// Add new cluster config
-			newClusterConfig := &ClusterConfig{
+			newClusterConfig := &auth.ClusterConfig{
 				ExcludePaths: slices.Clone(childClusterConfig.ExcludePaths),
 				Exclude:      childClusterConfig.Exclude,
 			}
