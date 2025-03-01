@@ -21,7 +21,18 @@ static_resources:
                   plugin_config:
                     "@type": type.googleapis.com/xds.type.v3.TypedStruct
                     value:
-                      echo_server_addr: echo_service_cluster
+                      api_key_header: "X-API-Key"
+                      username_header: "X-User-ID"
+                      keys_file: "/etc/envoy/api-keys.txt"
+                      check_interval: 60
+                      exclude_paths: ["/health", "/metrics"]  # Global exclude paths
+                      clusters:
+                        echo_service_cluster:  # Configuration specific to echo_service_cluster
+                          exclude_paths: ["/ip", "/user-agent"]
+                        monitoring_cluster:    # Configuration specific to monitoring_cluster
+                          exclude_paths: ["/stats", "/prometheus"]
+                        admin_cluster:         # Configuration specific to admin_cluster
+                          exclude_paths: ["/admin", "/console"]
               - name: envoy.filters.http.router
                 typed_config:
                   "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
