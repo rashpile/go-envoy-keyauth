@@ -1,0 +1,14 @@
+services:
+  envoy:
+    container_name: envoy-gateway
+    image: envoyproxy/envoy:contrib-v1.33-latest
+    ports:
+      - "127.0.0.1:10000:8080"
+      - "127.0.0.1:9901:9901"
+    environment:
+      - LOG_LEVEL=TRACE
+      - COOKIE_CONFIG=HTTPOnly; SameSite=Lax
+    user: "1001"
+    volumes:
+     - ./envoy.yaml:/etc/envoy/envoy.yaml
+     - ../dist/go-envoy-keyauth.so:/app/go-envoy-keyauth.so
