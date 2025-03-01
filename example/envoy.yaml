@@ -22,6 +22,8 @@ static_resources:
                     "@type": type.googleapis.com/xds.type.v3.TypedStruct
                     value:
                       api_key_header: "X-API-Key"
+                      api_key_query_param: "x-api-key"
+                      api_key_cookie: "x_api_key"
                       username_header: "X-User-ID"
                       keys_file: "/etc/envoy/api-keys.txt"
                       check_interval: 60
