@@ -5,5 +5,5 @@ if [ -d /output ]; then
   echo "Copied go-envoy-keyauth.so to /output directory"
 else
   echo "No output directory mounted. Run with -v /path/on/host:/output to extract the .so file."
-  echo "Example: docker run --rm -v \$(pwd)/dist:/output ghcr.io/username/go-envoy-keyauth:latest"
+  echo "Example: docker run --rm -v \$(pwd)/dist:/output ghcr.io/rashpile/go-envoy-keyauth:latest"
 fi
