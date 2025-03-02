@@ -1,4 +1,5 @@
-FROM golang:1.23.6-bookworm
+# Build stage
+FROM golang:1.23.6-bookworm AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -16,4 +17,26 @@ COPY . .
 ENV GOFLAGS=-buildvcs=false
 
 # Build the Go project with c-shared mode to produce a shared object file
-CMD ["go", "build", "-o", "/output/go-envoy-keyauth.so", "-buildmode=c-shared", "."]
+RUN go build -o /output/go-envoy-keyauth.so -buildmode=c-shared .
+
+# Final stage
+FROM alpine:3.19
+
+# Label the image with standard OCI annotations
+LABEL org.opencontainers.image.source="https://github.com/rashpile/go-envoy-keyauth"
+LABEL org.opencontainers.image.description="API Key authentication filter for Envoy Proxy"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Copy only the built .so file from the builder stage
+COPY --from=builder /output/go-envoy-keyauth.so /go-envoy-keyauth.so
+
+COPY scripts/extract.sh ./
+# Create an entrypoint script for file extraction
+RUN chmod +x /extract.sh
+
+# Set the entrypoint to the extraction script
+ENTRYPOINT ["/extract.sh"]
+
+# This container can be used in two ways:
+# 1. As a source for the .so file in Envoy (mount the .so file directly)
+# 2. For extraction of the .so file (run with a volume mount to copy the file out)

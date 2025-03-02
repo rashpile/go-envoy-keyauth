@@ -2,8 +2,6 @@ package filter
 
 import (
 	"strings"
-
-	"github.com/envoyproxy/envoy/contrib/golang/common/go/api"
 )
 
 // QueryHelper provides methods for working with query parameters
@@ -71,7 +69,7 @@ func (h *QueryHelper) parseQueryParameter(param string, result map[string]string
 }
 
 // GetQueryAPIKey extracts the API key from query parameters
-func (h *QueryHelper) GetQueryAPIKey(config *Config, header api.RequestHeaderMap) (string, bool) {
+func (h *QueryHelper) GetQueryAPIKey(config *Config, header FilterHeader) (string, bool) {
 	// Skip if query param auth is disabled
 	if config.APIKeyQueryParam == "" {
 		return "", false
