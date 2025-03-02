@@ -2,6 +2,10 @@ package filter
 
 import "github.com/envoyproxy/envoy/contrib/golang/common/go/api"
 
+type FilterHeader interface {
+	Path() string
+}
+
 type filterRequestFactory struct {
 	config *Config
 	callbacks api.FilterCallbackHandler
