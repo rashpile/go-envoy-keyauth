@@ -11,4 +11,5 @@ services:
     user: "1001"
     volumes:
      - ./envoy.yaml:/etc/envoy/envoy.yaml
+     - ./api-keys.txt:/etc/envoy/api-keys.txt
      - ../dist/go-envoy-keyauth.so:/app/go-envoy-keyauth.so
