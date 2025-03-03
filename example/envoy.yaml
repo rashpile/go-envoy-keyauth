@@ -30,11 +30,9 @@ static_resources:
                       exclude_paths: ["/health", "/metrics"]  # Global exclude paths
                       clusters:
                         echo_service_cluster:  # Configuration specific to echo_service_cluster
-                          exclude_paths: ["/ip", "/user-agent"]
-                        monitoring_cluster:    # Configuration specific to monitoring_cluster
-                          exclude_paths: ["/stats", "/prometheus"]
+                          exclude_paths: ["/status/200", "/status/201"]
                         admin_cluster:         # Configuration specific to admin_cluster
-                          exclude_paths: ["/admin", "/console"]
+                          exclude: true
               - name: envoy.filters.http.router
                 typed_config:
                   "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -44,6 +42,11 @@ static_resources:
                 - name: local_service
                   domains: ["*"]
                   routes:
+                  - match:
+                      prefix: "/ip"
+                    route:
+                      cluster: admin_cluster
+                      host_rewrite_literal: httpbin.org
                   - match:
                       prefix: "/"
                     route:
@@ -56,6 +59,24 @@ static_resources:
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: echo_service_cluster
+        endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: httpbin.org
+                  port_value: 443
+      transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+              sni: httpbin.org
+    - name: admin_cluster
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: admin_cluster
         endpoints:
         - lb_endpoints:
           - endpoint:

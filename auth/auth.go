@@ -96,6 +96,10 @@ func (s *AuthServiceImpl) ShouldSkipAuth(path string, clusterName string) bool {
 		return true
 	}
 
+	if isClusterExcluded(s.config, clusterName) {
+		return true
+	}
+
 	// Check if path is excluded for the specific cluster
 	if isPathExcludedForCluster(s.config, pathOnly, clusterName) {
 		return true
@@ -125,9 +129,6 @@ func (s *AuthServiceImpl) extractAPIKeyByPriority(requestFactory RequestFactory)
 
 	return "", false
 }
-
-// Helper functions moved from filter.go
-// These would be defined in the same file
 
 // getPathWithoutQuery removes query parameters from a path
 func getPathWithoutQuery(path string) string {
@@ -165,4 +166,12 @@ func isPathInExcludeList(path string, excludePaths []string) bool {
 		}
 	}
 	return false
+}
+
+func isClusterExcluded(config *AuthConfig, clusterName string) bool {
+	clusterConfig, exists := config.ClusterConfigs[clusterName]
+	if !exists {
+		return false
+	}
+	return clusterConfig.Exclude
 }

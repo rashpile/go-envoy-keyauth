@@ -124,7 +124,9 @@ func (p *Parser) Parse(any *anypb.Any, callbacks api.ConfigCallbackHandler) (int
 					ExcludePaths: []string{},
 					Exclude:      false,
 				}
-
+				if exclude, ok := config["exclude"].(bool); ok {
+					clusterConf.Exclude = exclude
+				}
 				// Parse cluster-specific exclude paths
 				if excludes, ok := config["exclude_paths"].([]interface{}); ok {
 					for _, exclude := range excludes {
